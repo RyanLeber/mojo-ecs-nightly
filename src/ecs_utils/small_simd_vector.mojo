@@ -56,7 +56,6 @@ struct SmallSIMDVector[type: DType, Capacity: Int= 32, sorted: Bool=True](Collec
 
     @always_inline("nodebug")
     fn add(inout self, val: Int) raises:
-        assert_true(val not in self, "EnityType already contains this Id: " + str(val))
         assert_not_equal(self.size, Self.Capacity, "EnityType is at capacity, Max Capacity = " + str(Self.Capacity))
 
         self.size += 1

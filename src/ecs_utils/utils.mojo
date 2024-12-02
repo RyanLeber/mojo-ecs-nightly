@@ -2,26 +2,30 @@
 from collections import Dict, InlineList, InlineArray, Set
 from random import random_si64
 from memory import UnsafePointer
+from sys import sizeof
 
 # """Represents an 64-bit signed scalar integer."""
 alias Component = Entity
-alias ArchetypeId = Int
+alias ArchetypeId = UInt
+alias ArchetypeIdx = Int
 
 # alias ArchetypeRecord = Int
 # """Index to a ComponentList (column) in an Archetypes component matrix"""
 
 
 # alias EntityType = SmallSIMDVector[DType.int64]
-alias EntityType = TypeVector[32]
+alias EntityType = TypeVector[16]
 """The total set of component ids an archetype represents"""
 alias ArchetypeSet = SmallSIMDVector[DType.int64]
+
+alias ColumnsVector = SmallSIMDVector[DType.uint8, EntityType.capacity, False]
 
 
 @value
 struct ArchetypeMap:
     """Used to lookup components in archetypes.
 
-        Keys: Archetype_type
+        Keys: Archetype_id
         Values: ArchetypeRecord
     """
     var data: Dict[ArchetypeId, ArchetypeRecord]
@@ -29,17 +33,17 @@ struct ArchetypeMap:
     fn __init__(inout self):
         self.data = Dict[ArchetypeId, ArchetypeRecord]()
 
-    fn __getitem__(self, archetype_id: Int) raises -> ArchetypeRecord:
-        return self.data[archetype_id]
+    fn __getitem__(self, id: UInt) raises -> ArchetypeRecord:
+        return self.data[id]
 
-    fn __setitem__(inout self, archetype_id: Int, archetype_record: ArchetypeRecord):
-        self.data[archetype_id] = archetype_record
+    fn __setitem__(inout self, id: UInt, archetype_record: ArchetypeRecord):
+        self.data[id] = archetype_record
 
-    fn pop(inout self, archetype_id: Int) raises -> ArchetypeRecord:
-        return self.data.pop(archetype_id)
+    fn pop(inout self, id: Int) raises -> ArchetypeRecord:
+        return self.data.pop(id)
 
-    fn __contains__(self, archetype_id: Int) -> Bool:
-        return archetype_id in self.data
+    fn __contains__(self, id: Int) -> Bool:
+        return id in self.data
 
 
 # Type used to store each unique component list only once
@@ -64,12 +68,13 @@ struct Archetype:
         return Self(EntityType.default())
 
     fn __init__(inout self, type: EntityType) raises:
-        # print(type.data)
         self.type = type
-        # print(self.type.data)
         self.id = hash(type)
         self.components = List[Column]()
         self.edges = Dict[Component, ArchetypeEdge]()
+
+        for _ in range(len(type)):
+            self.components.append(Column())
 
     fn __init__(inout self, *components: Component) raises:
         self.type = EntityType()
@@ -78,19 +83,29 @@ struct Archetype:
 
         for i in range(len(components)):
             self.type.add(components[i])
+            self.components.append(Column())
 
         self.id = hash(self.type)
 
     fn get_type(inout self) -> EntityType:
         return self.type
 
-    fn add_entity[*Ts: CollectionElement](inout self, *component_values: *Ts) raises -> Int:
+    fn add_entity[*Ts: CollectionElement](inout self, columns: ColumnsVector, *component_values: *Ts) raises -> Int:
+        alias count = len(VariadicList(Ts))
         @parameter
-        for i in range(len(VariadicList(Ts))):
-            self.components[i].append(component_values[i])
+        if count == 0:
+            return -1
 
-        # var row = len(self.components[0])
+        @parameter
+        for i in range(count):
+            self.components[columns[i]].append(component_values[i])
+        # returns the the enititys row in component matrix
         return len(self.components[0]) - 1
+
+    fn _add_entity[T: CollectionElement](inout self, column: Int, component_value: T) raises -> Int:
+        self.components[column].append(component_value)
+        # returns the the enititys row in component matrix
+        return len(self.components[column]) - 1
 
     fn remove_entity(inout self, row: Int) -> Column:
         return self.components.pop(row)
@@ -105,19 +120,19 @@ struct EntityRecord:
         var archetype (UnsafePointer[Archetype]): A pointer to an entities archetype
         var row (Int): Indexs into `archetype.components[row] -> Column` to retrieves the entities component values.
     """
-    var archetype: UnsafePointer[Archetype]
+    var archetype_idx: Int 
     var row: Int
         
 
 @value
 @register_passable
 struct ArchetypeEdge:
-    var add: UnsafePointer[Archetype]
-    var remove: UnsafePointer[Archetype]
+    var add: ArchetypeIdx
+    var remove: ArchetypeIdx
 
     fn __init__[__: None](inout self):
-        self.add = UnsafePointer[Archetype]()
-        self.remove = UnsafePointer[Archetype]()
+        self.add = -1
+        self.remove = -1
 
     # fn __init__(inout self, ,add: UnsafePointer[Archetype]):
     #     self.add = add
@@ -127,15 +142,16 @@ struct ArchetypeEdge:
     #     self.add = UnsafePointer[Archetype]()
     #     self.remove = remove
 
-    fn __init__(inout self, *, add: UnsafePointer[Archetype]= UnsafePointer[Archetype](), remove: UnsafePointer[Archetype]= UnsafePointer[Archetype]()):
+    fn __init__(inout self, *, add: Int= -1, remove: Int= -1):
         self.add = add
         self.remove = remove
 
-    fn add_component(inout self, ptr: UnsafePointer[Archetype]):
-        self.add = ptr
+    fn add_component(inout self, idx: Int):
+        self.add = idx
 
-    fn remove_component(inout self, ptr: UnsafePointer[Archetype]):
-        self.remove = ptr
+    fn remove_component(inout self, idx: Int):
+        self.remove = idx
+
 
 
 @value

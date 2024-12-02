@@ -19,7 +19,7 @@ struct ComponentManager[*component_types: CollectionElement, count: Int = len(Va
     #         Vector2, Vector3, Mat22, Body 
     #     ]()
 
-    fn init_component[type: CollectionElement](inout self, id: UInt32) -> Bool:
+    fn register_component[type: CollectionElement](inout self, id: UInt32) -> Bool:
         # if not self.contains_type[type]():
         #     return 0
         @parameter
@@ -58,6 +58,20 @@ struct ComponentManager[*component_types: CollectionElement, count: Int = len(Va
                     return self.type_ids[i]
                 return 0
         return 0
+
+    # fn get_id(self, component: Entity) -> CollectionElement:
+    #     var id = component.get_id()
+    #     @parameter
+    #     for i in range(len(VariadicList(component_types))):
+    #         if id in self.type_ids[i]:
+    #             alias tmp = component_types[i]
+    #             return component_types[i]
+    #         # alias T = component_types[i]
+    #         # if _type_is_eq[type, T]():
+    #         #     if self.type_mask[i] == True:
+    #         #         return self.type_ids[i]
+    #         #     return 0
+    #     return Position
 
 
         

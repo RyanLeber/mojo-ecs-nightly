@@ -29,5 +29,7 @@ from .utils import (
     EntityRecord,
     ArchetypeRecord,
     ArchetypeMap,
-    ArchetypeEdge
+    ArchetypeEdge,
+    ArchetypeIdx,
+    ColumnsVector
     )

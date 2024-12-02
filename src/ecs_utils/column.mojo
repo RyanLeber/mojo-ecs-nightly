@@ -9,21 +9,21 @@ fn _move_pointee_into_many_elements[T: CollectionElement](dest: UnsafePointer[T]
 
 
 struct Column:
-    var data: UnsafePointer[Int64]
+    var data: UnsafePointer[NoneType]
     var capacity: Int
     var element_count: Int
     var element_size: Int
 
     fn __init__(inout self):
-        self.data = UnsafePointer[Int64]()
+        self.data = UnsafePointer[NoneType]()
         self.element_count = 0
         self.capacity = 0
         self.element_size = 0
 
     fn __init__(inout self, capacity: Int):
-        self.data = UnsafePointer[Int64]()
-        self.element_count = 0
+        self.data = UnsafePointer[NoneType]()
         self.capacity = capacity
+        self.element_count = 0
         self.element_size = 0
 
 
@@ -43,7 +43,7 @@ struct Column:
         for i in range(size):
             (tmp_data + i).init_pointee_copy(new_data[i])
 
-        self.data = tmp_data.bitcast[Int64]()
+        self.data = tmp_data.bitcast[NoneType]()
         self.element_size = existing.element_size
         self.element_count = existing.element_count
 
@@ -59,7 +59,7 @@ struct Column:
 
         if self.data:
             self.data.free()
-        self.data = new_data.bitcast[Int64]()
+        self.data = new_data.bitcast[NoneType]()
         self.capacity = new_capacity
 
     fn __len__(self) -> Int:
@@ -110,7 +110,7 @@ struct Column:
             raise Error("Index:" + str(idx) +" is out of bounds.")
 
         if self.element_size != sizeof[T]():
-            raise Error("Size of T does not match existing size of T in Column.append[T]()")
+            raise Error("Size of T does not match existing size of T in Column.get[T]()")
 
         return self.data.bitcast[T]()[idx]
 
