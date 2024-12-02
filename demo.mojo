@@ -34,29 +34,34 @@ def main():
     var spawn = False
 
     # var world = World[view_width, view_height, Position, Velocity, Width, Int](renderer)
-    var world = World[view_width, view_height, Position, Velocity, Width, Int]()
+    var world = World[view_width, view_height, Position, Velocity, Width, Int](renderer)
     var box1 = world.add_entity(Position(100, 200), Width(50,50))
-    # var box2 = world.add_entity(Position(500, 200), Width(50,50))
+    var box2 = world.add_entity(Position(500, 200), Width(50,50))
+
+    var boxes = List[Entity]()
     
     while running:
         for event in mojo_sdl.event_list():
             if event[].isa[sdl.events.QuitEvent]():
                 running = False
             if event[].isa[sdl.events.MouseButtonEvent]():
-                if event[].unsafe_get[sdl.events.MouseButtonEvent]()[].clicks == 1 and event[].unsafe_get[sdl.events.MouseButtonEvent]()[].state == 1:
-                    # world.add_body(mouse.get_position())
+                if event[].unsafe_get[sdl.events.MouseButtonEvent]().clicks == 1 and event[].unsafe_get[sdl.events.MouseButtonEvent]().state == 1:
+                    var pos = mouse.get_position()
+                    boxes.append(world.add_entity(Position(pos[0], pos[1]), Width(50,50)))
                     spawn = True
-                elif event[].unsafe_get[sdl.events.MouseButtonEvent]()[].state == 0:
+                elif event[].unsafe_get[sdl.events.MouseButtonEvent]().state == 0:
                     spawn = False
             if event[].isa[sdl.events.KeyDownEvent]():
-                if event[].unsafe_get[sdl.events.KeyDownEvent]()[].key == keys.n1:
+                if event[].unsafe_get[sdl.events.KeyDownEvent]().key == keys.n1:
                     pass
                     # world.init_demo()
                     
         clock.tick()
 
-        # world.update(delta_time, mojo_sdl)
-        # world.draw(renderer)
+        world.update(delta_time, mojo_sdl)
+        world.draw(renderer)
 
         renderer.present()
+
+    _ = world^
         

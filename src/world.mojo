@@ -26,8 +26,8 @@ struct Position:
 @value
 @register_passable("trivial")
 struct Width:
-    var x: Int8
-    var y: Int8
+    var x: Float32
+    var y: Float32
 
 @value
 @register_passable("trivial")
@@ -60,9 +60,9 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
     var component_index: Dict[Component, ArchetypeMap]
 
     #MARK: __init__
-    fn __init__(inout self) raises:
+    fn __init__(inout self, renderer: Renderer) raises:
         self._cameras = List[Camera](capacity=100)
-        # self._cameras.append(Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1)))
+        self._cameras.append(Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1)))
 
         self.archetype_container = List[Archetype]()
         self.archetype_index = Dict[UInt, ArchetypeIdx]()
@@ -81,7 +81,6 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
 
     fn __moveinit__(inout self, owned other: Self):
         self._cameras = other._cameras^
-        # self._cameras.append(Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1)))
 
         self.archetype_container = other.archetype_container^
         self.archetype_index = other.archetype_index^
@@ -102,11 +101,10 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
         
         var archetypes = self.query_components(position, width)
 
-
         fn draw(pos: Position, w: Width) raises capturing:
             var R: Mat22 = Mat22(0)
-            var x: Vector2 = Vector2(pos.x.cast[DType.float32](), pos.y.cast[DType.float32]())
-            var h: Vector2 = Vector2(w.x.cast[DType.float32](), w.y.cast[DType.float32]()) * 0.5
+            var x: Vector2 = Vector2(pos.x, pos.y)
+            var h: Vector2 = Vector2(w.x, w.y) * 0.5
 
             # Calculate vertices
             var v1 = x + R * Vector2(-h.x, -h.y)
@@ -128,24 +126,7 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
             var width_col = archetype[].components[columns[1]]
             for i in range(len(pos_col)):
                 draw(pos_col.get[Position](i), width_col.get[Width](i))
-                # var pos = pos_col.get[Position](i)
-                # var w = width_col.get[Width](i)
-                # var R: Mat22 = Mat22(0)
-                # var x: Vector2 = Vector2(pos.x, pos.y)
-                # var h: Vector2 = Vector2(w.x, w.y) * 0.5
 
-                # # Calculate vertices
-                # var v1 = x + R * Vector2(-h.x, -h.y)
-                # var v2 = x + R * Vector2( h.x, -h.y)
-                # var v3 = x + R * Vector2( h.x,  h.y)
-                # var v4 = x + R * Vector2(-h.x,  h.y)
-
-                # renderer.set_color(color)
-
-                # renderer.draw_line(v2.x, v2.y, v1.x, v1.y)
-                # renderer.draw_line(v1.x, v1.y, v4.x, v4.y)
-                # renderer.draw_line(v2.x, v2.y, v3.x, v3.y)
-                # renderer.draw_line(v3.x, v3.y, v4.x, v4.y)
              
     #MARK: draw
     fn draw(self, renderer: Renderer) raises:
@@ -167,8 +148,16 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
 
     #MARK: update
     fn update(inout self, time_step: Float32, mojo_sdl: sdl.SDL) raises:
-        # self.world.step(time_step)
-        pass
+        var position: Component = self.component_manager.get_id[Position]()
+
+        var archetypes = self.query_components(position)
+
+        for item in archetypes.values():
+            var archetype = item[].archetype
+            var columns = item[].columns
+            var pos_col = Pointer.address_of(archetype[].components[columns[0]])
+            for i in range(len(pos_col[])):
+                pos_col[].get[Position](i).x += 5
 
 
     #MARK: query_components
