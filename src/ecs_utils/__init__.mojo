@@ -13,7 +13,6 @@ from .MathUtils import (
 
 from .camera import Camera
 from .quicksort import quick_sort
-from .body import Body
 from .column import Column
 from .entity import Entity
 from .small_simd_vector import SmallSIMDVector
@@ -31,5 +30,9 @@ from .utils import (
     ArchetypeMap,
     ArchetypeEdge,
     ArchetypeIdx,
-    ColumnsVector
+    ColumnsVector,
+    ArchetypeQueryMap,
+    ArchetypeQuery
     )
+
+from memory import ArcPointer

@@ -84,7 +84,6 @@ struct Camera:
     fn get_target(self) -> Texture:
         return self.target
 
-    fn get_viewport(self, renderer: Renderer) raises -> DRect[DType.int32]:
-        var size = renderer.get_output_size()
+    fn get_viewport(self, size: Tuple[Int, Int]) raises -> DRect[DType.int32]:
         return DRect[DType.int32](self.viewport.x * size[0], self.viewport.y * size[1], self.viewport.w * size[0], self.viewport.h * size[1])
 

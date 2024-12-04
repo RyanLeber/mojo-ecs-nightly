@@ -10,14 +10,6 @@ alias background_clear = Color(12, 8, 6, 0)
 alias Range = SIMD[DType.uint32, 2]
 
 @value
-@register_passable
-struct ArchetypeQuery(CollectionElement):
-    var archetype: UnsafePointer[Archetype]  
-    var columns: SmallSIMDVector[DType.int32, sorted=False]
-
-
-
-@value
 @register_passable("trivial")
 struct Position:
     var x: Float32
@@ -36,8 +28,9 @@ struct Velocity:
     var y: Float32
 
 
-struct World[screen_width: Int, screen_height: Int, *component_types: CollectionElement]:
+struct ECS[screen_width: Int, screen_height: Int, *component_types: CollectionElement]:
     var _cameras: List[Camera]
+    # var physics_engine: Optional[PhysicsEngine[gravity.value(), iterations.value()]]
 
     var entity_id_range: Range
     var component_id_range: Range
@@ -63,6 +56,7 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
     fn __init__(inout self, renderer: Renderer) raises:
         self._cameras = List[Camera](capacity=100)
         self._cameras.append(Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1)))
+        # self.physics_engine = None
 
         self.archetype_container = List[Archetype]()
         self.archetype_index = Dict[UInt, ArchetypeIdx]()
@@ -81,6 +75,7 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
 
     fn __moveinit__(inout self, owned other: Self):
         self._cameras = other._cameras^
+        # self.physics_engine = None
 
         self.archetype_container = other.archetype_container^
         self.archetype_index = other.archetype_index^
@@ -122,10 +117,13 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
         for item in archetypes.values():
             var archetype = item[].archetype
             var columns = item[].columns
-            var pos_col = archetype[].components[columns[0]]
-            var width_col = archetype[].components[columns[1]]
-            for i in range(len(pos_col)):
-                draw(pos_col.get[Position](i), width_col.get[Width](i))
+            # var pos_col = archetype[].components[columns[0]]
+            # var width_col = archetype[].components[columns[1]]
+            var pos_col = archetype[].get_column(columns[0])
+            var width_col = archetype[].get_column(columns[1])
+
+            for i in range(len(pos_col[])):
+                draw(pos_col[].get[Position](i), width_col[].get[Width](i))
 
              
     #MARK: draw
@@ -138,26 +136,11 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
             renderer.set_color(background_clear)
             renderer.clear()
 
-            # camera[].draw(self, renderer, Vector2(screen_width, screen_height))
-
             self.draw_rect(renderer)
 
             renderer.reset_target()
-            renderer.set_viewport(camera[].get_viewport(renderer))
+            renderer.set_viewport(camera[].get_viewport(renderer.get_output_size()))
             renderer.copy(camera[].get_target(), None)
-
-    #MARK: update
-    fn update(inout self, time_step: Float32, mojo_sdl: sdl.SDL) raises:
-        var position: Component = self.component_manager.get_id[Position]()
-
-        var archetypes = self.query_components(position)
-
-        for item in archetypes.values():
-            var archetype = item[].archetype
-            var columns = item[].columns
-            var pos_col = Pointer.address_of(archetype[].components[columns[0]])
-            for i in range(len(pos_col[])):
-                pos_col[].get[Position](i).x += 5
 
 
     #MARK: query_components
@@ -194,11 +177,15 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
                 if idx[] not in archetype_queries:
                     archetype_queries[idx[]] = ArchetypeQuery(UnsafePointer.address_of(archetype[]), component_columns)
 
+        # return a Dict[key: arch_idx, value: ArchetypeQuery[archetype: UnsafePointer, columns: ColumnsVector]]
+        # Key: archetype_idx, the archetypes idx in archetype_container.
+        # Value: ArchetypeQuery[Archetype_ptr: UnsafePointer, component_columns: ColumnsType], A pointer to the archetype,
+        # and a small vector containing the columns each component is stored in.
         return archetype_queries
 
 
     #MARK: get_component
-    fn get_component[T: CollectionElement](self, entity: Entity, component: Component) raises -> Optional[T]:
+    fn get_component[T: CollectionElement](mut self, entity: Entity, component: Component) raises -> ref [self] T:
         var record = self.entity_index[entity]
         var archetype = UnsafePointer.address_of(self.archetype_container[record.archetype_idx])
         # First check if archetype has component
@@ -207,8 +194,8 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
         # if component not in archetype[].type:
         #     return None
 
-        if archetype[].id not in archetypes:
-            return None
+        # if archetype[].id not in archetypes:
+        #     return
         
         var archetype_record = archetypes[archetype[].id]
         return archetype[].components[archetype_record.column].get[T](record.row)
@@ -538,6 +525,62 @@ struct World[screen_width: Int, screen_height: Int, *component_types: Collection
     #MARK: get_component_id
     fn get_component_id[T: CollectionElement](self) -> Component:
         return self.component_manager.get_id[T]()
+
+
+
+fn ecs_physics(mut ecs: ECS, mut physics_engine: PhysicsEngine, body_entities: List[Entity], time_step: Float32) raises:
+    var body_component: Component = ecs.get_component_id[Body]()
+    # var joint_component: Component = ecs.get_component_id[Joint]()
+    # var joint_queries = ecs.query_components(joint_component)
+
+    var bodies = List[UnsafePointer[Body]]()
+
+    for entity in body_entities:
+        var body = UnsafePointer.address_of(ecs.get_component[Body](entity[], body_component))
+        bodies.append(body)
+
+    physics_engine.step(time_step, bodies)
+    # physics_engine.step(time_step, body_queries, joint_queries)
+
+
+fn ecs_physics_render(mut ecs: ECS, renderer: Renderer, body_entities: List[Entity]) raises:
+    var screen_dimensions = Vector2(ecs.screen_width, ecs.screen_height)
+    var body_component: Component = ecs.get_component_id[Body]()
+
+    fn draw(b: Body) raises capturing:
+        var color = Color(204, 204, 229)
+        var R: Mat22 = Mat22(b.rotation)
+        var x: Vector2 = b.position
+        var h: Vector2 = b.width * 0.5
+
+        # Calculate vertices
+        var v1 = (x + R * Vector2(-h.x, -h.y)).world_to_screen(screen_dimensions)
+        var v2 = (x + R * Vector2( h.x, -h.y)).world_to_screen(screen_dimensions)
+        var v3 = (x + R * Vector2( h.x,  h.y)).world_to_screen(screen_dimensions)
+        var v4 = (x + R * Vector2(-h.x,  h.y)).world_to_screen(screen_dimensions)
+
+        renderer.set_color(color)
+
+        renderer.draw_line(v2.x, v2.y, v1.x, v1.y)
+        renderer.draw_line(v1.x, v1.y, v4.x, v4.y)
+        renderer.draw_line(v2.x, v2.y, v3.x, v3.y)
+        renderer.draw_line(v3.x, v3.y, v4.x, v4.y)
+
+    renderer.set_color(background_clear)
+    renderer.clear()
+
+    for camera in ecs._cameras:
+        renderer.set_target(camera[].get_target())
+        renderer.set_color(background_clear)
+        renderer.clear()
+        for entity in body_entities:
+            draw(ecs.get_component[Body](entity[], body_component))
+
+        renderer.reset_target()
+        renderer.set_viewport(camera[].get_viewport(renderer.get_output_size()))
+        renderer.copy(camera[].get_target(), None)
+
+    
 
 
 

@@ -107,6 +107,14 @@ struct Vector2(Absable):
     fn __abs__(self) -> Self:
         return abs(self.data)
 
+    @always_inline
+    fn __eq__(self, other: Self) -> Bool:
+        return (self.data == other.data).reduce_and()
+    
+    @always_inline
+    fn __ne__(self, other: Self) -> Bool:
+        return (self.data != other.data).reduce_or()
+
     fn write_to[W: Writer](self, inout writer: W):
         writer.write("(", self.data[0], ", ", self.data[1], ")")
 

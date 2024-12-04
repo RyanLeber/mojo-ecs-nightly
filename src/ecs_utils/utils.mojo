@@ -20,6 +20,16 @@ alias ArchetypeSet = SmallSIMDVector[DType.int64]
 
 alias ColumnsVector = SmallSIMDVector[DType.uint8, EntityType.capacity, False]
 
+alias ArchetypeQueryMap = Dict[ArchetypeIdx, ArchetypeQuery]
+
+@value
+@register_passable
+struct ArchetypeQuery(CollectionElement):
+    var archetype: UnsafePointer[Archetype]  
+    var columns: SmallSIMDVector[DType.int32, sorted=False]
+
+
+
 
 @value
 struct ArchetypeMap:
@@ -109,6 +119,9 @@ struct Archetype:
 
     fn remove_entity(inout self, row: Int) -> Column:
         return self.components.pop(row)
+
+    fn get_column[is_mutable: Bool, //, origin: Origin[is_mutable]](ref [origin] self, column: Int) -> Pointer[Column, __origin_of(self.components)]:
+        return Pointer.address_of(self.components[column])
 
 @value
 @register_passable
