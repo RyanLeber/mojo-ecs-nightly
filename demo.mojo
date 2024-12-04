@@ -9,6 +9,12 @@ from src import *
 # MARK: Constants
 alias background_clear = Color(12, 8, 6, 0)
 
+alias iterations: Int = 10
+alias GRAVITY = Vector2(0.0, -100.0)
+
+alias K_PI: Float32 = 3.14159265358979323846264
+alias INF = Float32.MAX
+
 alias scale = 1
 alias screen_width = 1600
 alias screen_height = 1000
@@ -16,7 +22,6 @@ alias view_width = screen_width // scale
 alias view_height = screen_height // scale
 
 alias keys = sdl.Keys
-
 
 
 def main():
@@ -28,17 +33,19 @@ def main():
     var clock = sdl.Clock(mojo_sdl, 1000)
     var running = True
 
-    # world.init_demo()
     var delta_time: Float32 = 1.0 / 60.0
+    var screen_dimensions = Vector2(screen_width, screen_height)
+
+
+    var physics_engine = PhysicsEngine[GRAVITY, iterations]()
+
+
+    var ecs = ECS[view_width, view_height, Position, Velocity, Width, Int, Body](renderer)
 
     var spawn = False
 
-    # var world = World[view_width, view_height, Position, Velocity, Width, Int](renderer)
-    var world = World[view_width, view_height, Position, Velocity, Width, Int](renderer)
-    var box1 = world.add_entity(Position(100, 200), Width(50,50))
-    var box2 = world.add_entity(Position(500, 200), Width(50,50))
-
-    var boxes = List[Entity]()
+    var bodies = List[Entity]()
+    bodies.append(ecs.add_entity(Body(Vector2(1000.0, 20.0), INF, position=Vector2(0, -200)), Width(0,0)))
     
     while running:
         for event in mojo_sdl.event_list():
@@ -47,21 +54,22 @@ def main():
             if event[].isa[sdl.events.MouseButtonEvent]():
                 if event[].unsafe_get[sdl.events.MouseButtonEvent]().clicks == 1 and event[].unsafe_get[sdl.events.MouseButtonEvent]().state == 1:
                     var pos = mouse.get_position()
-                    boxes.append(world.add_entity(Position(pos[0], pos[1]), Width(50,50)))
+                    bodies.append(ecs.add_entity(Body(Vector2(50, 50), 200, position=Vector2(pos[0], pos[1]).screen_to_world(screen_dimensions)), Width(0, 0)))
                     spawn = True
                 elif event[].unsafe_get[sdl.events.MouseButtonEvent]().state == 0:
                     spawn = False
             if event[].isa[sdl.events.KeyDownEvent]():
                 if event[].unsafe_get[sdl.events.KeyDownEvent]().key == keys.n1:
                     pass
-                    # world.init_demo()
                     
         clock.tick()
 
-        world.update(delta_time, mojo_sdl)
-        world.draw(renderer)
+        ecs_physics(ecs, physics_engine, bodies, delta_time)
+        ecs_physics_render(ecs, renderer, bodies)
 
         renderer.present()
 
-    _ = world^
+    _ = physics_engine
+    _ = ecs^
+    
         
