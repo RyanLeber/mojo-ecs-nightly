@@ -19,8 +19,8 @@ struct Body(CollectionElement):
     var I: Float32
     var inv_i: Float32
 
-    fn __init__(out self, width: Vector2, mass: Float32, *, position: Vector2= Vector2(0, 0), rotation: Float32= 0):
-        self.rotation = 0.0 if rotation == 0 else rotation
+    fn __init__(out self, width: Vector2, mass: Float32, *, position: Vector2= Vector2(0, 0), rotate: Float32= 0, rotation: Bool= True):
+        self.rotation = 0.0 if rotate == 0 else rotate
         self.velocity = Vector2(0, 0) 
         self.angular_velocity = 0.0
         self.force = Vector2(0, 0)
@@ -33,7 +33,7 @@ struct Body(CollectionElement):
         self.I = INF
         self.inv_i = 0.0
 
-        self.set(width, mass)
+        self.set(width, mass, rotation=rotation)
         
     @always_inline
     fn add_force(mut self, force: Vector2):
