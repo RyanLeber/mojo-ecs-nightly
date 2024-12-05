@@ -17,10 +17,10 @@ struct Entity(CollectionElementNew, KeyElement):
         self.set_id(id)
         self._set_generation((self.generation + 1))
 
-    fn __init__(inout self, data: UInt64):
+    fn __init__(mut self, data: UInt64):
         self.value = data
 
-    fn __init__(inout self, other: Entity):
+    fn __init__(mut self, other: Entity):
         self.value = other.value
 
     @staticmethod
@@ -28,16 +28,16 @@ struct Entity(CollectionElementNew, KeyElement):
         return value.cast[DType.uint64]()
 
 
-    fn set_id(inout self, id: UInt32):
+    fn set_id(mut self, id: UInt32):
         self.value = (self.relation << 32 | self._cast(id))
 
-    fn set_relation(inout self, relation: UInt32):
+    fn set_relation(mut self, relation: UInt32):
         self.value = (self._cast(relation) << 32 | self.id)
 
-    fn set_flag(inout self, flag: UInt8):
+    fn set_flag(mut self, flag: UInt8):
         self.value = (self._cast(flag) << 60) | (self.generation << 32) | self.id
 
-    fn _set_generation(inout self, generation: UInt16):
+    fn _set_generation(mut self, generation: UInt16):
         self.value = (self.flag << 60) | (self._cast(generation) << 32) | self.id
 
     fn get_id(self) -> UInt32:
@@ -78,6 +78,4 @@ struct Entity(CollectionElementNew, KeyElement):
 
     fn __ne__(self, other: Self) -> Bool:
         return self.value != other.value
-
-    # fn __int__(self) -> Int: 
-    #     return self._get_value()
+        

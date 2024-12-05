@@ -22,8 +22,8 @@ struct Column:
 
     fn __init__(inout self, capacity: Int):
         self.data = UnsafePointer[NoneType]()
-        self.element_count = 0
         self.capacity = capacity
+        self.element_count = 0
         self.element_size = 0
 
 
@@ -101,7 +101,7 @@ struct Column:
         # self.data = data_ptr.bitcast[NoneType]()
         self.element_count += 1
 
-    fn get[T: CollectionElement](inout self, idx: Int) raises -> ref [__origin_of(self)] T:
+    fn get[T: CollectionElement](ref [_] self, idx: Int) raises -> ref [self] T:
         var normalized_idx = idx
         if idx < 0:
             normalized_idx += len(self)
@@ -110,7 +110,7 @@ struct Column:
             raise Error("Index:" + str(idx) +" is out of bounds.")
 
         if self.element_size != sizeof[T]():
-            raise Error("Size of T does not match existing size of T in Column.append[T]()")
+            raise Error("Size of T does not match existing size of T in Column.get[T]()")
 
         return self.data.bitcast[T]()[idx]
 

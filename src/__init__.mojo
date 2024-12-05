@@ -1,9 +1,11 @@
 
 from collections import Dict, InlineArray, Set
+from sys.intrinsics import _type_is_eq
 
-from .ecs_utils import *
+from .ecs import *
 from .physics import *
-from .world import ECS, Position, Width, Velocity, ecs_physics, ecs_physics_render
+from .utils import *
+from .ecs_world import ECS
 
 from sdl import Renderer, Texture, Color, DPoint, DRect, Keyboard, KeyCode
 

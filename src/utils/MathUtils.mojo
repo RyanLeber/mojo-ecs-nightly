@@ -34,6 +34,16 @@ struct Vector2(Absable):
     fn __init__(inout self, data: SIMD[DType.float32, 2]):
         self.data = data
 
+    @implicit
+    @always_inline
+    fn __init__[Dt: DType](inout self, data: Tuple[Scalar[Dt], Scalar[Dt]]):
+        self.data = SIMD[DType.float32, 2](data[0].cast[DType.float32](), data[1].cast[DType.float32]())
+
+    @implicit
+    @always_inline
+    fn __init__(inout self, data: Tuple[Int, Int]):
+        self.data = SIMD[DType.float32, 2](data[0], data[1])
+
     @always_inline
     fn __copyinit__(inout self, other: Self):
         self.data = other.data
