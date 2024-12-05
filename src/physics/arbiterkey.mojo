@@ -34,8 +34,6 @@ struct DJBX33A_Hasher[custom_secret: UInt64 = 0]:
     fn _update_with_bytes(inout self, bytes: UnsafePointer[UInt8], n: Int):
         """The algorithm is not optimal."""
         for i in range(n):
-            # self.hash_data = self.hash_data * 33 + val_to_load.load(bytes, offset=i).cast[DType.uint64]()
-            # self.hash_data = self.hash_data * 33 + Scalar[DType.uint8]().load(bytes, offset=i).cast[DType.uint64]()
             self.hash_data = self.hash_data * 33 + bytes[i].cast[DType.uint64]()
 
     @always_inline
@@ -52,6 +50,7 @@ struct DJBX33A_Hasher[custom_secret: UInt64 = 0]:
         return (self.hash_data ^ self.secret).cast[dt]()
 
 @value
+@register_passable
 struct ArbiterKey(KeyElement):
     var b1: Int64
     var b2: Int64
@@ -90,3 +89,10 @@ struct ArbiterKey(KeyElement):
     @always_inline
     fn __str__(self) -> String:
         return "b1: " + hex(self.b1) + ", b2:" + hex(self.b2)
+
+    @always_inline
+    fn contacting(self, b1: Int64, b2: Int64) -> Bool:
+        if (b1 == self.b1 or b1 == self.b2) and
+        (b1 == self.b1 or b1 == self.b2):
+            return True
+        return False
