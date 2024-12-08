@@ -4,6 +4,3 @@
 *.egg-info
 # magic environments
 .magic
-
-/tmp/
-/src/src_tmp/
