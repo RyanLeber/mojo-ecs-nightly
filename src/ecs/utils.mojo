@@ -92,4 +92,8 @@ struct ArchetypeRecord:
 
         var column (Int)
     """
+    @implicit
+    fn __init__(out self, column: Int):
+        self.column = column
+
     var column: Int

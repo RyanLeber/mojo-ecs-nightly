@@ -2,7 +2,6 @@
 from math import sin, cos
 
 import sdl
-import infrared 
 from src import *
 
 from time import perf_counter_ns
@@ -16,7 +15,6 @@ alias GRAVITY = Vector2(0.0, -100.0)
 
 alias INF = Float32.MAX
 alias K_PI: Float32 = 3.14159265358979323846264
-alias y_offset = sin(K_PI/4) * 500
 alias delta_time: Float32 = 1.0 / 60.0
 
 
@@ -39,6 +37,8 @@ def main():
 
     var bodies = List[Entity]()
 
+
+    var y_offset = sin(K_PI/4) * 500
     # Set the floor
     var ground = ecs.add_entity(Body(Vector2(1000.0, 20.0), INF, position=Vector2(0, -y_offset)))
     bodies.append(ground)

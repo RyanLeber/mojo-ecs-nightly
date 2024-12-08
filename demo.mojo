@@ -2,7 +2,6 @@
 from math import sin, cos
 
 import sdl
-import infrared 
 from src import *
 
 
@@ -14,7 +13,6 @@ alias GRAVITY = Vector2(0.0, -100.0)
 
 alias INF = Float32.MAX
 alias K_PI: Float32 = 3.14159265358979323846264
-alias y_offset = sin(K_PI/4) * 500
 alias delta_time: Float32 = 1.0 / 60.0
 
 
@@ -26,7 +24,6 @@ alias keys = sdl.Keys
 def main():
     var mojo_sdl = sdl.SDL(video=True, timer=True, events=True)
     var window = sdl.Window(mojo_sdl, "Mojo ECS", screen_width, screen_height)
-    var keyboard = sdl.Keyboard(mojo_sdl)
     var mouse = sdl.Mouse(mojo_sdl)
     var renderer = sdl.Renderer(window^, flags = sdl.RendererFlags.SDL_RENDERER_ACCELERATED)
     var running = True
@@ -36,8 +33,8 @@ def main():
     var ecs = ECS[Position, Velocity, Width, Int, Body](renderer)
 
     var bodies = List[Entity]()
-    var joints = List[Entity]()
 
+    var y_offset = sin(K_PI/4) * 500
     # Set the floor
     var ground = ecs.add_entity(Body(Vector2(1000.0, 20.0), INF, position=Vector2(0, -y_offset)))
     bodies.append(ground)
@@ -73,8 +70,5 @@ def main():
         renderer.present()
         
 
-    _ = physics_engine
     _ = ecs^
-        
-    
-        
+           

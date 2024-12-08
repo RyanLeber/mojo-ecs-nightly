@@ -24,7 +24,7 @@ struct ECS[*component_types: CollectionElement]:
     #MARK: __init__
     fn __init__(out self, renderer: Renderer) raises:
         self._cameras = List[Camera](capacity=100)
-        self._cameras.append(Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1)))
+        self._cameras.append(Camera(renderer, DRect[DType.float32](0, 0, 1, 1)))
         self.entity_id_range = IdRange(1000, 2000)
         self.component_id_range = IdRange(0, 256)
 

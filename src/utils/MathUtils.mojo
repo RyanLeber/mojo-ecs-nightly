@@ -23,29 +23,29 @@ from random import random_float64
 
 @register_passable
 struct Vector2(Absable):
-    alias type = DType.float32
     var data: SIMD[DType.float32, 2]
 
     @always_inline
-    fn __init__(inout self, x: Scalar[DType.float32], y: Scalar[DType.float32]):
+    fn __init__(out self, x: Scalar[DType.float32], y: Scalar[DType.float32]):
         self.data = SIMD[DType.float32, 2](x, y)
 
+    @implicit
     @always_inline
-    fn __init__(inout self, data: SIMD[DType.float32, 2]):
+    fn __init__(out self, data: SIMD[DType.float32, 2]):
         self.data = data
 
     @implicit
     @always_inline
-    fn __init__[Dt: DType](inout self, data: Tuple[Scalar[Dt], Scalar[Dt]]):
+    fn __init__[Dt: DType](out self, data: Tuple[Scalar[Dt], Scalar[Dt]]):
         self.data = SIMD[DType.float32, 2](data[0].cast[DType.float32](), data[1].cast[DType.float32]())
 
     @implicit
     @always_inline
-    fn __init__(inout self, data: Tuple[Int, Int]):
+    fn __init__(out self, data: Tuple[Int, Int]):
         self.data = SIMD[DType.float32, 2](data[0], data[1])
 
     @always_inline
-    fn __copyinit__(inout self, other: Self):
+    fn __copyinit__(out self, other: Self):
         self.data = other.data
 
     @always_inline
@@ -53,11 +53,11 @@ struct Vector2(Absable):
         return self.data[idx]
 
     @always_inline
-    fn __setitem__(inout self, idx: Int, value: Scalar[DType.float32]):
+    fn __setitem__(mut self, idx: Int, value: Scalar[DType.float32]):
         self.data[idx] = value
 
     @always_inline
-    fn __setattr__[name: StringLiteral](inout self, val: Scalar[DType.float32]):
+    fn __setattr__[name: StringLiteral](mut self, val: Scalar[DType.float32]):
         @parameter
         if name == "x":
             self.data[0] = val
@@ -67,7 +67,7 @@ struct Vector2(Absable):
             constrained[name == "x" or name == "y", "can only access with x or y members"]()
 
     @always_inline
-    fn __getattr__[name: StringLiteral](borrowed self) -> Scalar[DType.float32]:
+    fn __getattr__[name: StringLiteral](read self) -> Scalar[DType.float32]:
         @parameter
         if name == "x":
             return self.data[0]
@@ -98,11 +98,11 @@ struct Vector2(Absable):
         return Vector2(m.col1.x * v.x + m.col2.x * v.y, m.col1.y * v.x + m.col2.y * v.y)
 
     @always_inline
-    fn __iadd__(inout self, other: Self):
+    fn __iadd__(mut self, other: Self):
         self.data = self.data + other.data
 
     @always_inline
-    fn __isub__(inout self, other: Self):
+    fn __isub__(mut self, other: Self):
         self.data = self.data - other.data
 
     @always_inline
@@ -125,7 +125,7 @@ struct Vector2(Absable):
     fn __ne__(self, other: Self) -> Bool:
         return (self.data != other.data).reduce_or()
 
-    fn write_to[W: Writer](self, inout writer: W):
+    fn write_to[W: Writer](self, mut writer: W):
         writer.write("(", self.data[0], ", ", self.data[1], ")")
 
     fn __str__(self) -> String:
@@ -240,7 +240,7 @@ struct Mat22(Absable):
         self.col2 = col2
 
     @always_inline
-    fn __init__(inout self, angle: Float32):
+    fn __init__(out self, angle: Float32):
         var c = cos(angle)
         var s = sin(angle)
 
